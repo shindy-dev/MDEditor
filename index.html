@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title></title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+  <link rel="stylesheet" type="text/css" href="src/css/preview.css">
+  <link rel="stylesheet" type="text/css" href="src/css/split.css">
+</head>
+<body>
+<div id="left" class="split split-horizontal">
+  <div id="editor" class="split content"></div>
+</div>
+<div id="right" class="split split-horizontal"> 
+  <div id="preview" class="split content">
+    <div id="preview_children"></div>
+  </div>
+</div>
+
+<script src="node_modules/split.js/dist/split.min.js"></script>
+<script>
+  Split(['#left', '#right'], {
+    gutterSize: 8,
+    onDrag: ()=>{
+      if(editor !== null)
+        editor.layout()
+    }
+  });
+</script>
+
+<script src="node_modules/monaco-editor/min/vs/loader.js"></script>
+<script>
+  let editor;
+  require.config({
+    paths: { 'vs': 'node_modules/monaco-editor/min/vs' },
+    'vs/nls' : {availableLanguages: {'*': 'de'}},
+  });
+  require(['vs/editor/editor.main'], () => {
+    monaco.editor.setTheme("vs");
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      language: 'markdown',
+      automaticLayout: true,
+      lineNumbers: true,
+      wrappingColumn: 0,
+      scrollBeyondLastLine: false,
+    });
+    editor.onDidChangeModelContent((e) => {
+      window.api.send('md2html/i', {md: editor.getValue()});
+    });
+  });
+</script>
+
+<script>
+  window.api.on('md2html/o', (arg)=>{
+    const preview = document.getElementById("preview");
+    document.getElementById("preview_children").remove()
+    preview.insertAdjacentHTML('afterbegin', "<div id='preview_children'></div>")
+    const preview_children = document.getElementById("preview_children")
+    preview_children.insertAdjacentHTML('afterbegin', arg.html);
+  });
+</script>
+
+</body>
+</html>
