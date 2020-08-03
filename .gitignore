@@ -105,3 +105,10 @@ dist
 
 # venv
 venv/
+
+# preview.html
+src/html/preview.html
+
+# MDEditor.json
+settings/MDEditor.json
+

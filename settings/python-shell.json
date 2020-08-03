@@ -1,0 +1,6 @@
+{
+    "mode": "text",
+    "pythonPath": "./venv/bin/python",
+    "pythonOptions": ["-u"],
+    "scriptPath": "./src/py"
+}

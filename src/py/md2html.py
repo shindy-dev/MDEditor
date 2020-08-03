@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, urllib
 import markdown
 # markdown extensions (standard)
 from markdown.extensions.extra import ExtraExtension
@@ -16,17 +16,15 @@ npx electron .
 """
 
 class Md2Html:
-    html_format = """<!DOCTYPE html>
+    temp = """<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <title>Title</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
-    <link rel="stylesheet" type="text/css" href="{}" >
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="{css}" >
 </head>
 <body>
-<div id="preview_children" class="container">
-    {}
+<div id="preview" class="container">
+{content}
 </div>
 </body>
 </html>
@@ -34,7 +32,7 @@ class Md2Html:
     def __init__(self, html_path, css_path):
         self.exts=[
             ExtraExtension(), 
-            TocExtension(slugify=lambda value, separator: value),
+            TocExtension(slugify=lambda value, separator: urllib.parse.quote(value)),
             Nl2BrExtension(),
             SuperFencesCodeExtension()
         ]
@@ -42,10 +40,9 @@ class Md2Html:
         self.css_path = css_path
     
     def convert(self, text: str, encoding: str='utf-8'):
-        #md = Md2Html.html_format.format(markdown.markdown(text, extensions=self.exts))
         md = markdown.markdown(text, extensions=self.exts)
         with open(self.html_path, 'w', encoding=encoding) as f:
-            f.write(Md2Html.html_format.format(self.css_path, md))
+            f.write(Md2Html.temp.format(css=self.css_path, content=md))
         print(md)
 
 

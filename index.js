@@ -1,17 +1,3 @@
-const fs = require('fs')
-const {electron, app, BrowserWindow, Menu, ipcMain, TouchBarColorPicker, BrowserView} = require('electron');
-const {PythonShell} = require('python-shell')
-const pie = require('puppeteer-in-electron')
-const puppeteer = require('puppeteer-core');
-
-
-let mainWindow;
-const __srcpath = `${__dirname}/src`
-const __pypath = `${__srcpath}/py`
-const __jspath = `${__srcpath}/js`
-const __htmlpath = `${__srcpath}/html`
-const __csspath = `${__srcpath}/css`
-const __platform = process.platform
 // * platform *
 // 'aix'
 // 'darwin'
@@ -21,135 +7,235 @@ const __platform = process.platform
 // 'sunos'
 // 'win32'
 
-// TODO: ダークモード
-// TODO: md入力
+// TODO: 画像 ![](){: style="height:100px;"}
+// TODO: ダイアログ
 // TODO: プレビューウィンドウ
 // TODO: DnD対応
 
-PythonShell.defaultOptions = {
-  mode: 'text',
-  pythonPath: `${__dirname}/venv/bin/python`,
-  pythonOptions: ['-u'],
-  scriptPath: __pypath,
+const path = require('path')
+const __settingspath = path.join(__dirname, 'settings');
+const __srcpath = path.join(__dirname, 'src');
+const __jspath = path.join(__srcpath, 'js');
+const __htmlpath = path.join(__srcpath, 'html');
+const __csspath = path.join(__srcpath, 'css');
+const __platform = process.platform;
+
+const fs = require('fs');
+const {app, BrowserWindow, Menu, ipcMain, dialog, webContents} = require('electron');
+const {PythonShell} = require('python-shell');
+const {JsonCast} = require(path.join(__jspath, 'jsoncast.js'));
+const {ExportFile} = require(path.join(__jspath, 'exportfile.js'));
+const {Utf8Cast} = require(path.join(__jspath, 'utf8cast.js'));
+
+// settings
+PythonShell.defaultOptions = JsonCast.loadJson(path.join(__settingspath , 'python-shell.json'));
+
+if (!fs.existsSync(path.join(__settingspath, 'MDEditor.json'))){
+  JsonCast.exportJson({
+    theme: "vs",
+    lastpath: ""}
+    , path.join(__settingspath, 'MDEditor.json'));
 }
+const appOptions = JsonCast.loadJson(path.join(__settingspath, 'MDEditor.json'))
 
-const init_pie = async () => {
-  await pie.initialize(app);
-};
-init_pie();
+// variables
+let mainWindow, menu;
+const utf8Cast = new Utf8Cast();
 
-// window-all-closed
-app.on('window-all-closed', app.quit);
-// アプリ起動後の処理
-app.on('ready', createWindow);
-
-// メインウィンドウを作成するための関数
-function createWindow() {
-  mainWindow = new BrowserWindow(
-  {
-    titleBarStyle: 'default', 
-    title: "", 
-    width: 800, 
-    height: 600,
+// app events
+app.on('window-all-closed', async () => {
+  await JsonCast.exportJson(appOptions, path.join(__settingspath, 'MDEditor.json'));
+  app.quit();
+});
+app.on('ready', async () => {
+  mainWindow = new BrowserWindow({
     webPreferences: {
-      nodeIntegration: false,
       contextIsolation: true,
-      preload: `${__jspath}/preload.js`
-    },
+      preload: path.join(__jspath, 'preload.js')
+    }
   });
-  mainWindow.on('closed', () => { mainWindow = null; });
-
-  mainWindow.loadURL(`file://${__dirname}/index.html`);
+  await mainWindow.loadURL(`file://${__dirname}/index.html`);
+  settings();
   createMenu();
+
   // 開発ツールを有効化
-  // mainWindow.openDevTools();
-}
+  mainWindow.openDevTools();
+});
 
 function createMenu(){
   const items = [
     { 
-      label: "file", 
+      label: "File", 
       submenu: [
         {
-          label: "export",
+          label: "Open",
+          click: openMd
+        },
+        {
+          label: "Save",
+          accelerator: 'CmdOrCtrl+S',
+          click: saveMd
+        },
+        {
+          label: "Save As ...",
+          accelerator: 'Shift+CmdOrCtrl+S',
+          click: saveMd_dialog
+        },
+        {
+          label: "Export",
           submenu: [
             {
-              label: "export image",
+              label: "Export Image",
               submenu: [
                 {
-                  label: "export png",
-                  click(menuItem, browserWindow, event){ exportFile(ext='png');}
+                  label: "Export png",
+                  click: (menuItem, browserWindow, event)=>{ 
+                    ExportFile.exportImage(`file://${__htmlpath}/preview.html`, './preview.png');
+                  }
                 },
                 { 
-                  label: "export jpg",
-                  click(menuItem, browserWindow, event){ exportFile(ext='jpg');}
+                  label: "Export jpeg",
+                  click: (menuItem, browserWindow, event)=>{ 
+                    ExportFile.exportImage(`file://${__htmlpath}/preview.html`, './preview.jpg');
+                  }
                 }
               ]
             },
             {
-              label: "export pdf",
-              click(){ exportFile(ext='pdf'); }
+              label: "Export PDF",
+              click: ()=>{ 
+                const filePath = dialog.showSaveDialogSync(
+                  mainWindow,
+                  {
+                    properties: [],
+                    filters: [
+                      {
+                        name: 'Document',
+                        extensions: ['pdf']
+                      }
+                    ]
+                  });
+                if(filePath){
+                  ExportFile.exportPdf(`file://${__htmlpath}/preview.html`, filePath); 
+                }
+              }
             }
           ]
         }
       ]
     },
     {
-      label: "editor", 
+      label: "Editor", 
       submenu: [
-        {role: 'undo'},
-        {role: 'redo'},
-        {type: 'separator',},
+        {
+          label: 'Undo',
+          click: ()=>{mainWindow.webContents.send('undo');}
+        },
+        {
+          label: 'Redo',
+          click: ()=>{mainWindow.webContents.send('redo');}
+        },
+        {type: 'separator'},
         {role: 'cut'},
         {role: 'copy'},
         {role: 'paste'},
       ]
     },
     {
-      label: 'view',
+      label: 'View',
       submenu: [
         {
-          label: 'theme',
+          label: 'Theme',
           submenu: [
             {
-              label: 'vs',
-              click(){}
+              label: 'Light',
+              click: ()=>{
+                mainWindow.webContents.send('set-monaco-theme', {theme: 'vs'});
+                appOptions['theme'] = 'vs';
+              }
             },
             {
-              label: 'vs-dark',
-              click(){}
+              label: 'Dark',
+              click: ()=>{
+                mainWindow.webContents.send('set-monaco-theme', {theme: 'vs-dark'});
+                appOptions['theme'] = 'vs-dark';
+              }
             }
           ]
-        },
-        { role: 'resetzoom',},
-        { role: 'zoomin',},
-        { role: 'zoomout',},
+        }
       ]
     }
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(items));
+  menu = Menu.buildFromTemplate(items);
+  Menu.setApplicationMenu(menu);
+}
+
+function openMd() {
+  const filePaths = dialog.showOpenDialogSync(
+    mainWindow,
+    {
+      properties: ['openFile'],
+      filters: [
+        {
+          name: 'Document',
+          extensions: ['md']
+        }
+      ]
+    });
+  if(filePaths)
+    mainWindow.webContents.send('set-monaco-value', {
+      value: loadFile(filePaths[0]),
+      filename: appOptions['lastpath'].replace(/^.*[\\\/]/, '')
+    });
+}
+
+function saveMd() {
+  if (!appOptions['lastpath']) saveMd_dialog();
+  else mainWindow.webContents.send('get-monaco-value');
+}
+
+function saveMd_dialog(){
+  const filePath = dialog.showSaveDialogSync(
+    mainWindow,
+    {
+      properties: [],
+      filters: [
+        {
+          name: 'Document',
+          extensions: ['md']
+        }
+      ]
+    });
+  if(filePath){
+    appOptions['lastpath'] = filePath;
+    saveMd();
+  }
 }
 
 
-const exportFile = async (ext='png') => {
-  const browser = await pie.connect(app, puppeteer);
-  const previewWindow = new BrowserWindow({show: false});
-  await previewWindow.loadURL(`file://${__htmlpath}/preview.html`);
-  const page = await pie.getPage(browser, previewWindow);
-  await page.loadURL(`file://${__htmlpath}/preview.html`);
-  if (ext === 'pdf'){
-    await page.pdf({path: `preview.${ext}`, format: 'A4'});
-  }else{
-    await page.screenshot({path: `preview.${ext}`, fullPage: true});
-  }
-  await browser.close();
-  await previewWindow.destroy();
-  previewWindow.on('closed', () => { previewWindow = null; });
-};
+function loadFile(path){
+  if (!fs.existsSync(path)) return "";
+  const value = utf8Cast.encode(fs.readFileSync(path));
+  appOptions['lastpath'] = path;
+  return value;
+}
 
-ipcMain.on('md2html/i', (event, arg) => {
-  const options = { args: [__platform, `${__htmlpath}/preview.html`, `${__csspath}/preview.css`, arg.md] };
+function settings(){
+  mainWindow.webContents.send('set-monaco-theme', {theme: appOptions['theme']});
+  mainWindow.webContents.send('set-monaco-value', {
+    value: loadFile(appOptions['lastpath']),
+    filename: (appOptions['lastpath']) ? appOptions['lastpath'].replace(/^.*[\\\/]/, '') : 'Untitled'
+  });
+}
+
+
+ipcMain.on('md2html/i', (event, args) => {
+  const options = { args: [__platform, `${__htmlpath}/preview.html`, `${__csspath}/preview.css`, args.md] };
   PythonShell.run('md2html.py', options, (err, results) => {
       mainWindow.webContents.send('md2html/o', {html: results.join('\n')});
   });
+});
+
+ipcMain.on('get-monaco-value', (event, args) => {
+  fs.writeFileSync(appOptions['lastpath'], utf8Cast.decode(args.value));
 });
