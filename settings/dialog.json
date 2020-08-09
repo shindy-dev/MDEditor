@@ -1,0 +1,57 @@
+{
+    "Open": {
+        "properties": [
+            "openFile"
+        ],
+        "filters": [
+            {
+                "name": "Document",
+                "extensions": [
+                    "md",
+                    "markdown"
+                ]
+            }
+        ]
+    },
+    "SaveMdAs": {
+        "filters": [
+            {
+                "name": "Document",
+                "extensions": [
+                    "md",
+                    "markdown"
+                ]
+            }
+        ]
+    },
+    "ExportPng": {
+        "filters": [
+            {
+                "name": "Image",
+                "extensions": [
+                    "png"
+                ]
+            }
+        ]
+    },
+    "ExportJpg": {
+        "filters": [
+            {
+                "name": "Image",
+                "extensions": [
+                    "jpg"
+                ]
+            }
+        ]
+    },
+    "ExportPdf": {
+        "filters": [
+            {
+                "name": "Document",
+                "extensions": [
+                    "pdf"
+                ]
+            }
+        ]
+    }
+}

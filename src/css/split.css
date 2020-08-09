@@ -17,7 +17,8 @@ html, body {
   border: solid 2px #7e7e7e;
   border-radius: 12px;
   white-space: nowrap;
-  font-size: 12px;
+  font-family: Helvetica, arial, sans-serif;
+  font-size: 13px;
   height: 24px;
   box-sizing: border-box;
 }

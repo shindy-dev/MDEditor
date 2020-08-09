@@ -106,9 +106,12 @@ dist
 # venv
 venv/
 
+.vscode/
+
 # preview.html
 src/html/preview.html
 
 # MDEditor.json
-settings/MDEditor.json
+settings/mdeditor.json
 
+build.js

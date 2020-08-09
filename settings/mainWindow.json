@@ -1,0 +1,6 @@
+{
+    "webPreferences": {
+        "contextIsolation": true,
+        "preload": "./src/js/preload.js"
+    }
+}

@@ -1,6 +1,19 @@
 {
-    "mode": "text",
-    "pythonPath": "./venv/bin/python",
-    "pythonOptions": ["-u"],
-    "scriptPath": "./src/py"
+    "darwin": {
+        "mode": "text",
+        "pythonPath": "./venv/bin/python",
+        "pythonOptions": [
+            "-u"
+        ],
+        "scriptPath": "./src/py"
+    },
+    "win32": {
+        "mode": "text",
+        "encoding": "binary",
+        "pythonPath": "./venv/Scripts/python",
+        "pythonOptions": [
+            "-u"
+        ],
+        "scriptPath": "./src/py"
+    }
 }

@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="src/css/preview.css">
   <link rel="stylesheet" type="text/css" href="src/css/split.css">
   <script src="node_modules/split.js/dist/split.min.js"></script>
   <script src="node_modules/monaco-editor/min/vs/loader.js"></script>
-<script src="node_modules/darkmode-js/lib/darkmode-js.min.js"></script>
+  <script src="node_modules/darkmode-js/lib/darkmode-js.min.js"></script>
 </head>
-<body>
-<div id="left" class="split split-horizontal">
-  <div id="editor_filename" class='filename'></div>
-  <div id="editor" class="split content"></div>
-</div>
-<div id="right" class="split split-horizontal">
-  <div id="preview_filename" class='filename'>Preview</div>
-  <div id="preview" class="split content">
-  </div>
-</div>
-<script>
-  Split(['#left', '#right'], {
-    gutterSize: 8,
-    onDrag: ()=>{
-      if(editor !== null)
-        editor.layout()
-    }
-  });
-</script>
 
-<script>
-  let editor;
-  require.config({
-    paths: { 'vs': 'node_modules/monaco-editor/min/vs' },
-    'vs/nls' : {availableLanguages: {'*': 'ja'}},
-  });
-  require(['vs/editor/editor.main'], () => {
-    editor = monaco.editor.create(document.getElementById('editor'), {
-      language: 'markdown',
-      automaticLayout: true,
-      lineNumbers: true,
-      wrappingColumn: 0,
-      scrollBeyondLastLine: false,
+<body>
+  <div id="left" class="split split-horizontal">
+    <div id="editor_filename" class='filename'></div>
+    <div id="editor" class="split content"></div>
+  </div>
+  <div id="right" class="split split-horizontal">
+    <div id="preview_filename" class='filename'>Preview</div>
+    <div id="preview" class="split content">
+    </div>
+  </div>
+  <script>
+    Split(['#left', '#right'], {
+      gutterSize: 8,
+      onDrag: () => {
+        if (editor !== null)
+          editor.layout()
+      }
     });
-    editor.onDidChangeModelContent((e) => {
-      window.api.send('md2html/i', {md: editor.getValue()});
+  </script>
+
+  <script>
+    let editor;
+    require.config({
+      paths: { 'vs': 'node_modules/monaco-editor/min/vs' },
+      'vs/nls': { availableLanguages: { '*': 'ja' } },
     });
-  });
-</script>
-<script src="src/js/renderer_event.js"></script>
+    require(['vs/editor/editor.main'], () => {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        language: 'markdown',
+        automaticLayout: true,
+        lineNumbers: true,
+        wrappingColumn: 0,
+        scrollBeyondLastLine: false
+      });
+      editor.onDidChangeModelContent((e) => {
+        window.api.send('md2html/i', { md: editor.getValue() });
+      });
+    });
+  </script>
+  <script src="src/js/renderer_event.js"></script>
 
 </body>
+
 </html>
